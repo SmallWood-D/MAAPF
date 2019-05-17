@@ -1,9 +1,9 @@
-from MAAPFBoard import graph
+from MAAPFBoard.Graph import board
 from MAAPFBoard.A_star import MAAPFAlgorithms
 
 if __name__ == '__main__':
     print('MAAPF solution.')
-    b = graph.Board.build_board('graph_input.txt')
+    b = board.Board.build_board('graph_input.txt')
     b.print_board()
 
     h = lambda board: lambda s, t: int(t) - int(s)
