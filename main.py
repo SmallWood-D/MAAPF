@@ -1,164 +1,104 @@
-def start_single(n, m, c, t):
-    state = single_agent_path(n, m, c, t, [])
-    return state
+import itertools
+import random
+import os
+
+EMPTY_SYM = "#"
+
+def read_table(fd):
+    board = []
+    with open(fd, 'r') as board_fd:
+        lines = board_fd.readlines()
+    max = 0
+    for line in lines:
+        line = line.rstrip(os.linesep)
+        line = line.replace(" ", EMPTY_SYM)
+        line_len = len(line)
+        max = line_len if max < line_len else max
+        board.append(list(line))
+
+    board.insert(0, [EMPTY_SYM] * max)
+    board.append([EMPTY_SYM] * max)
+    for line in board:
+        line_len = len(line)
+        if max - line_len > 0:
+            line.extend(list(EMPTY_SYM * (max - line_len)))
+        line.insert(0, EMPTY_SYM)
+        line.append(EMPTY_SYM)
+    return board
+
+def read_prob(fd):
+    prob = {}
+    with open(fd, 'r') as board_fd:
+        lines = board_fd.readlines()
+    for line in lines:
+        line = line.strip()
+        val = line.split()
+        prob[val[0]] = float(val[1])
+    return prob
 
 
-def graph_builder(s, paths, target):
-    graph = {s:set()}
-    for path in paths:
-        parent = s
-        for pos in path[1:]:
-            x = graph.get(parent, None)
-            if x == None:
-                graph[parent] = set()
-            x = graph.get(parent, None)
-            x.add(pos)
-            parent = pos
-    graph[target] = set()
+
+def build_graph(board):
+    row = len(board)
+    col = len(board[0])
+    graph = {}
+    for i in range(row):
+        for j in range(col):
+            if  board[i][j] == EMPTY_SYM:
+                continue
+            graph[board[i][j]] = [None if board[i][j - 1] == EMPTY_SYM else board[i][j - 1],
+                                  None if board[i + 1][j] == EMPTY_SYM else board[i+1][j],
+                                  None if board[i][j + 1] == EMPTY_SYM else board[i][j + 1],
+                                  None if board[i - 1][j] == EMPTY_SYM else board[i - 1][j]]
     return graph
 
 
-def single_agent_stop(n: int, m: int, c:tuple,  path: list):
-    x = c[0]
-    y = c[1]
-    return n <= x or x < 0 or m <= y or y < 0 or c in path
+def build_table(my_list):
+    table = {}
+    for pair in itertools.product(my_list, repeat=2):
+        if len(pair) == len(set(pair)):
+            table[pair] = []
+    return table
 
 
-def single_agent_path(n: int, m: int, c:tuple, t: tuple, path: list):
-    if c == t:
-        path.append(t)
-        return [path]
-    elif single_agent_stop(n, m, c, path):
-        return []
-    path.append(c)
-    return single_agent_path(n, m, (c[0] + 1, c[1]), t, path.copy()) \
-           + single_agent_path(n, m, (c[0] - 1, c[1]), t, path.copy()) \
-           + single_agent_path(n, m, (c[0], c[1] + 1), t, path.copy()) \
-           + single_agent_path(n, m, (c[0], c[1] - 1), t, path.copy())
+def get_actions(graph, pos):
+    print(set((x, y) for x in graph[pos[0]] for y in graph[pos[1]]))
+    pass
+
+# V(s) = max_a [sum_s' (prob(s,a,s')*V(s')] + R(s)
+def vi(graph, prob, target):
+    table = build_table(list(graph.keys()))
+    for pos in table.keys():
+        table[pos].append(-1)
+    table[target] = [1]
+    table['sink'] = -100
+    for t in table.items():
+        print(t)
+    print(graph)
+    for i in range(1):
+        for pos in table.keys():
+            if pos == 'sink' or pos == target:
+                continue
+            for action in get_actions(graph, pos):
+                pass
+                # steps = [for pos in action]
+            table[pos].append(max(steps) + -1)  # reward of step
 
 
-def reward(x, y) :
-    if x == (2,2):
-        return 1
-    return 0
+def rtdp(graph, c, p, t):
+    value_dict = {s: 0 for s in graph.keys()}
+    for s in graph:
+        while s != t:
+            value_dict[s] = c(s) + min([p(s,s_2) * value_dict[s_2] for s_2 in graph[s]])
+            s = random.sample(set(graph[s]), 1)[0]
 
-
-def prob(x, y):
-    return 0.1
-
-
-def vi(graph, r, p, gamme):
-    value_dict = {s: 1 for s in graph.keys()}
-    EPSILON = 0.01
-    delta = 1
-    while delta > EPSILON:
-        prev_value_dict = value_dict.copy()
-        delta = 0
-        for s in graph.keys():
-            route_sum = []
-            for ns in graph[s]:
-                route_sum.append(p(s, ns) * value_dict[ns])
-            if route_sum:
-                value_dict[s] = r(s, 0) + gamme * max(route_sum)
-            else:
-                value_dict[s] = r(s,0)
-            delta = max(delta, abs(value_dict[s] - prev_value_dict[s]))
     return value_dict
 
 
-action = {
-    0: lambda c: c,
-    1: lambda c: (c[0] - 1, c[1]),
-    2: lambda c: (c[0] + 1, c[1]),
-    3: lambda c: (c[0], c[1] - 1),
-    4: lambda c: (c[0], c[1] + 1),
-}
-
-
-def inc(list, base):
-    for idx, e in enumerate(list):
-        step = e + 1 if (e + 1) < base else 0
-        list[idx] = step
-        if step:
-            break
-
-
-def gen_options(start, base):
-    target = [0] * len(start)
-    while start != target:
-        yield start
-        inc(start, base)
-
-
-def gen_states(start_state):
-    base = 5
-    start_option = [0] * len(start_state)
-    start_option[0] = 1
-    curr_state = start_state
-    for option in gen_options(start_option, base):
-        yield [action[o](s) for  o, s in zip(option, curr_state)]
-
-
-def multi_agent_path(n: int, m: int, c: list, t: list, path: list):
-    if c == t:
-        path.append(t)
-        return path
-    elif multi_agent_stop(n, m, c, path):
-        return None
-    path.append(c)
-    total_path = []
-    for state in gen_states(c):
-        res = multi_agent_path(n, m, state, t, path.copy())
-        if res:
-            total_path.extend(res)
-    return total_path
-
-
-def multi_agent_stop(n, m, cs, path):
-    is_stop = False
-    seen = []
-    for i, c in enumerate(cs):
-        x = c[0]
-        y = c[1]
-        if n <= x or x < 0 or m <= y or y < 0:
-            is_stop = True
-        elif c in seen:
-            is_stop = True
-        else:
-            c_path = [p[i] for p in path]
-            if c in c_path:
-                is_stop = True
-        seen.append(c)
-    return is_stop
-
-
-def start_multi(n, m, c, t):
-    state = multi_agent_path(n, m, c, t, [])
-    res = []
-    temp_res = []
-    for s in state:
-        temp_res.append(s)
-        if s == t:
-            res.append(temp_res)
-            temp_res = []
-
-    return res
-
-
 if __name__ == '__main__':
-    states = start_multi(3, 3, [(0, 0), (1,1)], [(2, 2), (0, 0)])
-    for s in states:
-        print(s)
-    # states = start_single(3, 3, (0, 0), (2, 2))
-    # for s in states:
-    #     print(s)
-
-    # x = graph_builder((0,0), state, (2,2))
-    # for k in x.keys():
-    #     print (k)
-    #     print('\t',end='')
-    #     print(x[k])
-    #
-    # print(vi(x, reward, prob, 0))
-
+    prob = read_prob('prob')
+    graph = build_graph(read_table('board'))
+    assert graph.keys() == prob.keys(), "the probability and board file doesn't match"
+    # vi(graph, prob, ("A","D"))
+    print(get_actions(graph, ("A","D")))
 
