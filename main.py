@@ -62,8 +62,14 @@ def build_table(my_list):
 
 
 def get_actions(graph, pos):
-    print(set((x, y) for x in graph[pos[0]] for y in graph[pos[1]]))
-    pass
+    passable_actions = []
+    for p in pos:
+        curr_actions = graph[p]
+        curr_actions.append(None)
+        passable_actions.append(curr_actions)
+
+    actions = set(itertools.product(*passable_actions))
+    return filter(lambda x : len(x) == len(set(x)), actions)
 
 # V(s) = max_a [sum_s' (prob(s,a,s')*V(s')] + R(s)
 def vi(graph, prob, target):
@@ -100,5 +106,5 @@ if __name__ == '__main__':
     graph = build_graph(read_table('board'))
     assert graph.keys() == prob.keys(), "the probability and board file doesn't match"
     # vi(graph, prob, ("A","D"))
-    print(get_actions(graph, ("A","D")))
+    print(list(get_actions(graph, ("A","C"))))
 
