@@ -60,6 +60,7 @@ class Graph:
         :return: dictionary with adjacency list
         """
         self._table = {}
+        self._policy = {}
         self._prob = prob
         row = len(board)
         col = len(board[0])
@@ -81,6 +82,10 @@ class Graph:
 
     @property
     def table(self) -> Dict[str, List[float]]:
+        return self._table
+
+    @property
+    def policy(self) -> Dict[Tuple[str, str], Tuple[str, str]]:
         return self._table
 
     @property
@@ -156,7 +161,6 @@ class Graph:
                     calc = []
                     for c, m in zip(pos, next_step):
                         if c != m:
-                            # print(m, prob[m], table[pos][-1], next_step)
                             calc.append(((1 - self._prob[m]) * self._table[pos][-1]) + (self._prob[m] * sink_reward))
                     if next_step:
                         steps.append(sum(calc))
@@ -164,13 +168,35 @@ class Graph:
             if not limit and self._check_delta(delta):
                 break
 
+    # T(s) = argmax_a [sum_s' (prob(s,a,s')*V(s')] + R(s)
+    def vi_policy(self, target):
+        self._policy = {}
+        for pos in self._table.keys():
+            if pos == target:
+                continue
+            self._policy[pos] = max(self._get_actions(pos), key=lambda p: self.table[p][-1])
+
+    def policy_path(self, source, target):
+        path = list()
+        path.append(source)
+        limit = len(self._table)
+        while path[-1] != target:
+            if not limit:
+                raise Exception("Fail to find path")
+            limit -= 1
+            path.append(self._policy[path[-1]])
+
+        return path
+
 
 if __name__ == '__main__':
     prob = read_prob('prob')
     board = read_board('board')
     mdp = Graph(board, prob)
     mdp.vi(("C","E"), 6)
-    ts = mdp.table
-    for t in ts.items():
+    mdp.vi_policy(("C","E"))
+    for t in mdp.table.items():
         print(t)
+    l = mdp.policy_path(("A","B"), ("C","E"))
+    print("->".join(map(lambda t: str(t), l)))
 
