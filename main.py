@@ -2,7 +2,10 @@ from typing import List
 from typing import Iterator
 from typing import Dict
 from typing import Tuple
+import csv
 import itertools
+import time
+import random
 import os
 
 EMPTY_SYM = "#"
@@ -15,41 +18,33 @@ def read_board(file_path: str) -> List[List[str]]:
     :return: textual representation of board as list of lists
     """
     board = []
+    prob = {}
     with open(file_path, 'r') as board_fd:
         lines = board_fd.readlines()
     max_row_len = 0
-    for line in lines:
+    for idx, line in enumerate(lines):
         line = line.rstrip(os.linesep)
-        line = line.replace(" ", EMPTY_SYM)
-        line_len = len(line)
+        board_line = list()
+        for jdx, pos in enumerate(line.split(',')):
+            if pos:
+                loc_sym = f"{idx}|{jdx}"
+                board_line.append(loc_sym)
+                prob[loc_sym] = float(pos)
+            else:
+                board_line.append(EMPTY_SYM)
+        line_len = len(board_line)
         max_row_len = line_len if max_row_len < line_len else max_row_len
-        board.append(list(line))
+        board.append(board_line)
 
     board.insert(0, [EMPTY_SYM] * max_row_len)
     board.append([EMPTY_SYM] * max_row_len)
     for line in board:
         line_len = len(line)
         if max_row_len - line_len > 0:
-            line.extend(list(EMPTY_SYM * (max_row_len - line_len)))
+            line.extend([EMPTY_SYM for i in range(max_row_len - line_len)])
         line.insert(0, EMPTY_SYM)
         line.append(EMPTY_SYM)
-    return board
-
-
-def read_prob(file_path: str) -> Dict[str, float]:
-    """
-    read the probabilities file
-    :param file_path:
-    :return: dictionary  with the probabilities for each position in the board
-    """
-    prob = {}
-    with open(file_path, 'r') as board_fd:
-        lines = board_fd.readlines()
-    for line in lines:
-        line = line.strip()
-        val = line.split()
-        prob[val[0]] = float(val[1])
-    return prob
+    return board, prob
 
 
 class Graph:
@@ -86,7 +81,7 @@ class Graph:
 
     @property
     def policy(self) -> Dict[Tuple[str, str], Tuple[str, str]]:
-        return self._table
+        return self._policy
 
     @property
     def prob(self) -> Dict[str, float]:
@@ -174,29 +169,72 @@ class Graph:
         for pos in self._table.keys():
             if pos == target:
                 continue
-            self._policy[pos] = max(self._get_actions(pos), key=lambda p: self.table[p][-1])
+            max_val = max([self.table[p][-1] for p in self._get_actions(pos)])
+            self._policy[pos] = [p for p in self._get_actions(pos) if self.table[p][-1] == max_val]
 
     def policy_path(self, source, target):
         path = list()
         path.append(source)
-        limit = len(self._table)
+        limit = 10 * len(self._table)
         while path[-1] != target:
             if not limit:
                 raise Exception("Fail to find path")
             limit -= 1
-            path.append(self._policy[path[-1]])
+            path.append(random.choices(self._policy[path[-1]])[0])
 
         return path
 
+    def print_result_csv(self, file_name, vi_time, quality, board):
+        with open(file_name, 'w', newline='') as result_fd:
+            writer = csv.writer(result_fd)
+            writer.writerow(["position", "values"])
+            for pos, v in self.table.items():
+                row = [pos]
+                row.extend(v)
+                writer.writerow(row)
+            print(f"time, {vi_time}", file=result_fd)
+            print(f"quality,  {quality}%", file=result_fd)
+            for row in board:
+                print(", ".join([p if p == '#' else str(self.prob[p]) for p in row]), file=result_fd)
+
+
+def apply(state_a, state_b, prob_table):
+    death_prob = 1
+    next_state = None
+    for s in state_b:
+        death_prob *= prob_table[s]
+
+    if random.choices([True, False], weights=[1 - death_prob, death_prob])[0]:
+        next_state = state_b
+    return next_state
+
+
+def evaluate_policy(mdp, start, goal, num_of_experiments):
+    wins = 0
+    loses = 0
+    for i in range(num_of_experiments):
+        world_state = start
+        while True:
+            action = random.choices(mdp.policy[world_state])[0]
+            world_state = apply(world_state, action, mdp.prob)
+            if not world_state:
+                loses += 1
+                break
+            if world_state == goal:
+                wins += 1
+                break
+    return wins/num_of_experiments
 
 if __name__ == '__main__':
-    prob = read_prob('prob')
-    board = read_board('board')
+    board, prob = read_board('board')
     mdp = Graph(board, prob)
-    mdp.vi(("C","E"), 6)
-    mdp.vi_policy(("C","E"))
-    for t in mdp.table.items():
-        print(t)
-    l = mdp.policy_path(("A","B"), ("C","E"))
-    print("->".join(map(lambda t: str(t), l)))
+    start = time.time()
+    mdp.vi(("1|1", "2|1"))
+    end = time.time()
+    vi_time = end - start
+    print(vi_time)
+    mdp.vi_policy(("1|1", "2|1"))
+    quality = evaluate_policy(mdp, ("0|1", "1|0"), ("1|1", "2|1"), 1000)
+    mdp.print_result_csv("a.csv", vi_time, quality * 100, board)
+
 
