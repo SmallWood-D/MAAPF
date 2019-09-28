@@ -42,14 +42,16 @@ def read_board(file_path: str) -> Tuple[List[List[str]], Dict[str, float]]:
 
 
 def gen_board(n, m, pl, ph):
-    board = []
+    board = [[EMPTY_SYM] * (n + 2)]
     prob = {}
     for i in range(n):
-        row = []
+        row = [EMPTY_SYM]
         for j in range(m):
             p = uniform(pl, ph)
             k = f"{i}|{j}"
             row.append(k)
             prob[k] = p
+        row.append(EMPTY_SYM)
         board.append(row)
+    board.append([EMPTY_SYM] * (n + 2))
     return board, prob
