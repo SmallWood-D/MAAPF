@@ -14,4 +14,4 @@ def dijkstra(graph, start):
                 alt = dist[u] + (-1 * log(1 - graph.prob[p]))
                 if alt < dist[p]:
                     dist[p] = alt
-    print(dist)
+    return dist

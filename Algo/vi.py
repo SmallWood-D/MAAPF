@@ -17,14 +17,14 @@ class VI:
     def policy(self) -> Dict[Tuple[str, str], Tuple[str, str]]:
         return self._policy
 
-    def _init_table(self):
+    def _init_table(self, num_agents):
         """
         initialize the table to store the V values
         :return: table for VI calculation
         """
         self._table = {}
         positions = list(self._graph.graph.keys())  # all the positions on the board
-        for pair in itertools.product(positions, repeat=2):
+        for pair in itertools.product(positions, repeat=num_agents):
             if len(pair) == len(set(pair)):
                 self._table[pair] = []
 
@@ -43,23 +43,9 @@ class VI:
         moves = map(lambda action: VI.valid_action(pos, action), actions)
         return [move for move in moves if move is not None]
 
-    def _check_delta(self, delta: float) -> bool:
-        """
-        check if the latest VI iteration change is smaller then delta.
-        :param delta: the maximal difference between two value iterations.
-        :return: True if all the values in the table didn't change more then delta
-        """
-        stop = False
-        for row in self.table.values():
-            if len(row) > 1 and abs(row[-1] - row[-2]) > delta:
-                break
-        else:
-            stop = True
-        return stop
-
     # V(s) = max_a [sum_s' (prob(s,a,s')*V(s')] + R(s)
     def vi(self, target, limit=None, delta=0.0001):
-        self._init_table()
+        self._init_table(len(target))
         print(self.table)
         for pos in self._table.keys():
             self._table[pos].append(-1)
@@ -81,6 +67,20 @@ class VI:
                 self._table[pos].append(max(steps) + -1)  # reward of step
             if not limit and self._check_delta(delta):
                 break
+
+    def _check_delta(self, delta: float) -> bool:
+        """
+        check if the latest VI iteration change is smaller then delta.
+        :param delta: the maximal difference between two value iterations.
+        :return: True if all the values in the table didn't change more then delta
+        """
+        stop = False
+        for row in self.table.values():
+            if len(row) > 1 and abs(row[-1] - row[-2]) > delta:
+                break
+        else:
+            stop = True
+        return stop
 
     # T(s) = argmax_a [sum_s' (prob(s,a,s')*V(s')] + R(s)
     def vi_policy(self, target):
