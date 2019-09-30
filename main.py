@@ -6,8 +6,7 @@ from Algo.vi import VI
 from Algo.vi import evaluate_policy
 import time
 import csv
-
-# 3) Max/min/avg. optimal path (considering the risk, see paper above) for single agent
+import json
 
 
 def print_result_csv(file_name, graph, vi, ID, limit, prob_range, start, target, vi_time, quality, board):
@@ -38,6 +37,32 @@ def print_result_csv(file_name, graph, vi, ID, limit, prob_range, start, target,
         print(f"average optimal {opt_avg / len(start)}", file=result_fd)
 
 
+def print_result_json(file_name, graph, vi, ID, limit, prob_range, start, target, vi_time, quality, board):
+    result = dict()
+    # result['VI_table'] = vi.table
+    #
+    result["time"] = vi_time
+    result["quality"] = quality
+    result["agents"] = len(next(iter(vi.table.keys())))
+    result["ID"] = ID
+    result["expected utility"] = vi.table[start][-1]
+    result["min range"] = prob_range[0]
+    result["max range"] = prob_range[1]
+    result["board size"] = f"{len(board[0]) - 2} X {len(board) - 2}"
+    result["number of iteration"] = -1
+    if limit:
+        result["number of iteration"] = limit
+    result["board"] = board
+
+    opt_avg = 0
+    for s, g in zip(start, target):
+        opt_avg += dijkstra(graph, s)[g]
+    result["average optimal"] = opt_avg / len(start)
+
+    with open(file_name, 'w', newline='') as result_fd:
+        json.dump(result, result_fd)
+
+
 if __name__ == '__main__':
     ID = "sad"
     board, prob = gen_board(3, 4, 0.5, 0.8)
@@ -56,5 +81,5 @@ if __name__ == '__main__':
         print(m, v)
     quality = evaluate_policy(mdp, vi_g, ("1|1", "1|2"), ("0|0", "2|3"), 1000)
 
-    print_result_csv(f"{ID}.csv", mdp, vi_g, ID, 4, (0.5, 0.8), ("1|1", "1|2"), ("0|0", "2|3"), vi_time, quality * 100, board)
+    print_result_json(f"{ID}.json", mdp, vi_g, ID, 4, (0.5, 0.8), ("1|1", "1|2"), ("0|0", "2|3"), vi_time, quality * 100, board)
 
