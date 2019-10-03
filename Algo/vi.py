@@ -113,6 +113,11 @@ class VI:
         """
         next_pos = tuple(a if a else p for p, a in zip(pos, action))
         valid = len(next_pos) == len(set(next_pos)) and next_pos != pos
+        pos_map = {p: idx for idx, p in enumerate(pos)}
+        for idx, a in enumerate(action):
+            if a in pos_map and action[pos_map[a]] == pos[idx]:
+                valid = False
+                break
         return next_pos if valid else None
 
 
