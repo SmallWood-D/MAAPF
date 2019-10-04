@@ -46,7 +46,6 @@ class VI:
     # V(s) = max_a [sum_s' (prob(s,a,s')*V(s')] + R(s)
     def vi(self, target, limit=None, delta=0.0001):
         self._init_table(len(target))
-        print(self.table)
         for pos in self._table.keys():
             self._table[pos].append(-1)
         self._table[target] = [1]
