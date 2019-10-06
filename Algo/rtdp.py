@@ -1,9 +1,10 @@
 import random
 import itertools
 from typing import List, Dict, Tuple, Iterator
+from Algo.dijkstra import dijkstra
 
 
-class VI:
+class RTDP:
     def __init__(self, graph):
         self._policy = {}
         self._table = {}
@@ -40,32 +41,51 @@ class VI:
             curr_actions.append(None)
             passable_actions.append(curr_actions)
         actions = set(itertools.product(*passable_actions))
-        moves = map(lambda action: VI.valid_action(pos, action), actions)
+        moves = map(lambda action: RTDP.valid_action(pos, action), actions)
         return [move for move in moves if move is not None]
 
-    # V(s) = max_a [sum_s' (prob(s,a,s')*V(s')] + R(s)
-    def vi(self, target, limit=None, delta=0.0001):
-        self._init_table(len(target))
-        for pos in self._table.keys():
-            self._table[pos].append(-1)
-        self._table[target] = [1]
+    def _greedy_action(self, state):
+        actions = self._get_actions(state)
+        min_action = [actions[0], self._q_value(state, actions[0])]
+        actions.pop(0)
+        for next_step in actions:
+            val = self._q_value(state, next_step)
+            if val > min_action[1]:
+                min_action[0] = next_step
+                min_action[1] = val
+        return min_action[0]
+
+    def _next_state(self, state, action):
+        return action
+
+    def _q_value(self, state, next_step):
+        calc = []
         sink_reward = -100
-        iter_limit = limit if limit else 1000
-        for i in range(iter_limit):
-            for pos in self._table.keys():
-                steps = []
-                if pos == target:
-                    continue
-                for next_step in self._get_actions(pos):
-                    calc = []
-                    for c, m in zip(pos, next_step):
-                        if c != m:
-                            calc.append(((1 - self._graph.prob[m]) * self._table[next_step][-1]) + (self._graph.prob[m] * sink_reward))
-                    if next_step:
-                        steps.append(sum(calc))
-                self._table[pos].append(max(steps) + -1)  # reward of step
-            if not limit and self._check_delta(delta):
-                break
+        for c, m in zip(state, next_step):
+            if c != m:
+                calc.append(
+                    ((1 - self._graph.prob[m]) * self._table[next_step][-1]) + (self._graph.prob[m] * sink_reward))
+
+        return -5 + sum(calc)
+
+    def _trial(self, start, target):
+        curr_state = start
+        while curr_state != target:
+            action = self._greedy_action(curr_state)
+            self.table[curr_state].append(self._q_value(curr_state, action))
+            curr_state = self._next_state(curr_state, action)
+
+    def rtdp(self, start, target, limit=1000, delta=0.0001):
+        self._init_table(len(target))
+        dijkstra_vals = [dijkstra(self._graph, pos) for pos in target]
+        for state in self._table:
+            h_state = 0
+            for pos, dijkstra_val in zip(state, dijkstra_vals):
+                assert pos in dijkstra_val
+                h_state += dijkstra_val[pos]
+            self._table[state].append(h_state)
+        for i in range(limit):
+            self._trial(start, target)
 
     def _check_delta(self, delta: float) -> bool:
         """
@@ -82,7 +102,7 @@ class VI:
         return stop
 
     # T(s) = argmax_a [sum_s' (prob(s,a,s')*V(s')] + R(s)
-    def vi_policy(self, target):
+    def rtdp_policy(self, target):
         self._policy = {}
         for pos in self._table.keys():
             if pos == target:
@@ -98,7 +118,9 @@ class VI:
             if not limit:
                 raise Exception("Fail to find path")
             limit -= 1
-            path.append(random.choices(self._policy[path[-1]])[0])
+            x = random.choices(self._policy[path[-1]])[0]
+            print(x)
+            path.append(x)
 
         return path
 
@@ -118,6 +140,3 @@ class VI:
                 valid = False
                 break
         return next_pos if valid else None
-
-
-

@@ -2,7 +2,36 @@ import csv
 import json
 import glob
 import os
+import random
 from Algo.dijkstra import dijkstra
+
+
+def apply(state_a, state_b, prob_table):
+    death_prob = 1
+    next_state = None
+    for s in state_b:
+        death_prob *= prob_table[s]
+
+    if random.choices([True, False], weights=[1 - death_prob, death_prob])[0]:
+        next_state = state_b
+    return next_state
+
+
+def evaluate_policy(graph, vi, start, goal, num_of_experiments):
+    wins = 0
+    loses = 0
+    for i in range(num_of_experiments):
+        world_state = start
+        while True:
+            action = random.choices(vi.policy[world_state])[0]
+            world_state = apply(world_state, action, graph.prob)
+            if not world_state:
+                loses += 1
+                break
+            if world_state == goal:
+                wins += 1
+                break
+    return wins/num_of_experiments
 
 
 def print_result_csv(file_name, graph, vi, ID, limit, prob_range, start, target, vi_time, quality, board):
@@ -40,6 +69,7 @@ def print_result_json(graph, vi, ID, limit, prob_range, start, target, vi_time, 
     result["start"] = str(start)
     result["target"] = str(target)
     result["quality"] = quality
+    result["probability"] = graph.prob
     result["agents"] = len(next(iter(vi.table.keys())))
     result["ID"] = ID
     result["expected utility"] = vi.table[start][-1]
