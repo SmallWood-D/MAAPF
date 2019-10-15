@@ -3,7 +3,24 @@ import json
 import glob
 import os
 import random
-from Algo.dijkstra import dijkstra
+from Algo.dijkstra import pron_w
+
+
+
+def calculate_avg_optimal_probability(graph, start):
+    max_len = len(graph.prob.keys())
+    dist = {p: max_len for p in graph.graph}
+    q = set(graph.graph.keys())
+    dist[start] = 0
+    while q:
+        u = min(q, key=lambda p: dist[p])
+        q.remove(u)
+        for p in graph.graph[u]:
+            if p and p in q:
+                alt = dist[u] + (-1 * log(1 - graph.prob[p]))
+                if alt < dist[p]:
+                    dist[p] = alt
+    return dist
 
 
 def apply(state_a, state_b, prob_table):
@@ -58,7 +75,7 @@ def print_result_csv(file_name, graph, vi, ID, limit, prob_range, start, target,
 
         opt_avg = 0
         for s,g in zip(start, target):
-            opt_avg += dijkstra(graph, s)[g]
+            opt_avg += pron_w(graph, s)[g]
         print(f"average optimal {opt_avg / len(start)}", file=result_fd)
 
 
@@ -85,7 +102,8 @@ def print_result_json(graph, vi, ID, limit, prob_range, start, target, vi_time, 
 
     opt_avg = 0
     for s, g in zip(start, target):
-        opt_avg += dijkstra(graph, s)[g]
+        opt_avg += pron_w(graph, s)[g]
+        # TODO can be improved
     result["average optimal"] = opt_avg / len(start)
 
     with open(f"results{os.path.sep}{ID}.json", 'w') as result_fd:
