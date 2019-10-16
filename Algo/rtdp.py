@@ -1,4 +1,3 @@
-import random
 import itertools
 from typing import List, Dict, Tuple, Iterator
 from Algo.dijkstra import dijkstra
@@ -62,11 +61,10 @@ class RTDP:
         calc = []
         sink_reward = -100
         for c, m in zip(state, next_step):
-            if c != m:
-                calc.append(
-                    ((1 - self._graph.prob[m]) * self._table[next_step][-1]) + (self._graph.prob[m] * sink_reward))
-
-        return -5 + sum(calc)
+            # if c != m:
+            calc.append(
+                ((1 - self._graph.prob[m]) * self._table[next_step][-1]) + (self._graph.prob[m] * sink_reward))
+        return -1 + sum(calc)
 
     def _trial(self, start, target):
         curr_state = start
@@ -108,20 +106,19 @@ class RTDP:
             if pos == target:
                 continue
             max_val = max([self.table[p][-1] for p in self._get_actions(pos)])
+
             self._policy[pos] = [p for p in self._get_actions(pos) if self.table[p][-1] == max_val]
 
     def policy_path(self, source, target):
         path = list()
-        path.append(source)
-        limit = 10 * len(self._table)
-        while path[-1] != target:
-            if not limit:
-                raise Exception("Fail to find path")
-            limit -= 1
-            x = random.choices(self._policy[path[-1]])[0]
-            print(x)
-            path.append(x)
-
+        self._policy = {}
+        curr_state = source
+        while curr_state != target:
+            path.append(curr_state)
+            action = self._greedy_action(curr_state)
+            self._policy[curr_state] = [action]
+            curr_state = self._next_state(curr_state, action)
+        path.append(curr_state)
         return path
 
     @staticmethod

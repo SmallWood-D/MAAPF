@@ -59,8 +59,8 @@ class VI:
                 for next_step in self._get_actions(pos):
                     calc = []
                     for c, m in zip(pos, next_step):
-                        if c != m:
-                            calc.append(((1 - self._graph.prob[m]) * self._table[next_step][-1]) + (self._graph.prob[m] * sink_reward))
+                        # if c != m:
+                        calc.append(((1 - self._graph.prob[m]) * self._table[next_step][-1]) + (self._graph.prob[m] * sink_reward))
                     if next_step:
                         steps.append(sum(calc))
                 self._table[pos].append(max(steps) + -1)  # reward of step
