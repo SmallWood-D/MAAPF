@@ -7,6 +7,7 @@ class RTDP(MDP):
 
     def __init__(self, graph):
         super().__init__(graph)
+        self.table_delta = {}
 
     def _greedy_action(self, state):
         actions = self._get_actions(state)
@@ -38,7 +39,7 @@ class RTDP(MDP):
             self.table[curr_state].append(self._q_value(curr_state, action))
             curr_state = self._next_state(curr_state, action)
 
-    def rtdp(self, start, target, limit=1000, delta=0.0001):
+    def rtdp(self, start, target, limit=None, delta=0.00001, delta_limit=20):
         self._init_table(len(target))
         dijkstra_vals = [dijkstra(self._graph, pos) for pos in target]
         for state in self._table:
@@ -47,8 +48,15 @@ class RTDP(MDP):
                 assert pos in dijkstra_val
                 h_state += dijkstra_val[pos]
             self._table[state].append(h_state)
-        for i in range(limit):
+        iter_limit = limit if limit else 1000
+        stop = 0
+        for i in range(iter_limit):
             self._trial(start, target)
+            stop = stop + 1 if self._check_delta(delta) else 0
+            if stop == delta_limit:
+                break
+
+        return -1 if i == iter_limit - 1 else i
 
     def policy_path(self, source, target):
         path = list()
@@ -61,3 +69,23 @@ class RTDP(MDP):
             curr_state = self._next_state(curr_state, action)
         path.append(curr_state)
         return path
+
+    def _check_delta(self, delta: float) -> bool:
+        """
+        check if the latest iteration change is smaller then delta.
+        :param delta: the maximal difference between two value iterations.
+        :return: True if all the values in the table didn't change more then delta
+        """
+        stop = False
+        for pos, row in self.table.items():
+            if pos in self.table_delta:
+                old_val = self.table_delta[pos]
+                new_val = len(row)
+                self.table_delta[pos] = new_val
+                if old_val < new_val and abs(row[-1] - row[-2]) > delta:
+                    break
+            else:
+                self.table_delta[pos] = len(row)
+        else:
+            stop = True
+        return stop

@@ -30,6 +30,7 @@ class VI(MDP):
                 self._table[pos].append(max(steps) + -1)  # reward of step
             if not limit and self._check_delta(delta):
                 break
+        return -1 if i == iter_limit - 1 else i
 
     # T(s) = argmax_a [sum_s' (prob(s,a,s')*V(s')] + R(s)
     def vi_policy(self, target):

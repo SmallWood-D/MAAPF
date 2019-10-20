@@ -14,19 +14,21 @@ if __name__ == '__main__':
         mdp = Graph(board, prob)
         vi_g = VI(mdp)
         start = time.time()
-        vi_g.vi(("0|0", "2|3"))
+        iter_num = vi_g.vi(("0|0", "2|3"))
         end = time.time()
         vi_time = end - start
         vi_g.vi_policy(("0|0", "2|3"))
         quality = evaluate_policy(mdp, vi_g, ("1|1", "1|2"), ("0|0", "2|3"), 1000)
-        print_result_json(mdp, vi_g, ID, 4, (0.5, 0.8), ("1|1", "1|2"), ("0|0", "2|3"), vi_time, quality * 100,
+        print_result_json(mdp, vi_g, ID, iter_num, (0.5, 0.8), ("1|1", "1|2"), ("0|0", "2|3"), vi_time, quality * 100,
                           board, "VI", board_id)
 
+        local_time = time.localtime()
         ID = f"{i}_{local_time.tm_hour}{local_time.tm_min}{local_time.tm_sec}"
         mdp = Graph(board, prob)
         rtdp_g = RTDP(mdp)
+        print("RTDP")
         start = time.time()
-        rtdp_g.rtdp(("1|1", "1|2"), ("0|0", "2|3"), limit=100)
+        iter_num = rtdp_g.rtdp(("1|1", "1|2"), ("0|0", "2|3"))
         end = time.time()
         vi_time = end - start
         try:
@@ -34,7 +36,7 @@ if __name__ == '__main__':
         except Exception as e:
             print(e)
         quality = evaluate_policy(mdp, rtdp_g, ("1|1", "1|2"), ("0|0", "2|3"), 1000)
-        print_result_json(mdp, rtdp_g, ID, 4, (0.5, 0.8), ("1|1", "1|2"), ("0|0", "2|3"), vi_time, quality * 100,
+        print_result_json(mdp, rtdp_g, ID, iter_num, (0.5, 0.8), ("1|1", "1|2"), ("0|0", "2|3"), vi_time, quality * 100,
                       board, "RTDP", board_id)
 
     local_time= time.localtime()
