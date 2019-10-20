@@ -3,8 +3,8 @@ import json
 import glob
 import os
 import random
+from math import log
 from Algo.dijkstra import pron_w
-
 
 
 def calculate_avg_optimal_probability(graph, start):
@@ -79,8 +79,9 @@ def print_result_csv(file_name, graph, vi, ID, limit, prob_range, start, target,
         print(f"average optimal {opt_avg / len(start)}", file=result_fd)
 
 
-def print_result_json(graph, vi, ID, limit, prob_range, start, target, vi_time, quality, board, algo, board_id,
+def print_result_json(graph, vi, id, limit, prob_range, start, target, vi_time, quality, board, algo, board_id,
                       heuristic="NA"):
+    exp_id = f"{algo}_{id}"
     result = dict()
     # result['VI_table'] = vi.table
     result["time"] = vi_time
@@ -89,13 +90,13 @@ def print_result_json(graph, vi, ID, limit, prob_range, start, target, vi_time, 
     result["quality"] = quality
     result["probability"] = graph.prob
     result["agents"] = len(next(iter(vi.table.keys())))
-    result["ID"] = ID
+    result["ID"] = exp_id
     result["algo"] = algo
     result["expected utility"] = vi.table[start][-1]
     result["min range"] = prob_range[0]
     result["max range"] = prob_range[1]
     result["board size"] = f"{len(board[0]) - 2} X {len(board) - 2}"
-    result["number of iteration"] = limit if limit else -1
+    result["number of iteration"] = limit if limit != -1 else "-"
     result["board"] = board
     result["board_id"] = board_id
     result["heuristic"] = heuristic
@@ -106,7 +107,7 @@ def print_result_json(graph, vi, ID, limit, prob_range, start, target, vi_time, 
         # TODO can be improved
     result["average optimal"] = opt_avg / len(start)
 
-    with open(f"results{os.path.sep}{ID}.json", 'w') as result_fd:
+    with open(f"results{os.path.sep}{exp_id}.json", 'w') as result_fd:
         json.dump(result, result_fd, sort_keys=True, indent=4)
 
 
