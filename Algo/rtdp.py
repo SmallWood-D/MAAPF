@@ -6,7 +6,7 @@ from Algo.dijkstra import pron_w as dijkstra
 class RTDP(MDP):
 
     def __init__(self, graph):
-        super().__init__(graph)
+        super().__init__(graph, "RTDP")
         self.table_delta = {}
 
     def _greedy_action(self, state):

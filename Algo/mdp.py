@@ -3,10 +3,11 @@ from typing import List, Dict, Tuple, Iterator
 
 
 class MDP:
-    def __init__(self, graph):
+    def __init__(self, graph, name):
         self._policy = {}
         self._table = {}
         self._graph = graph
+        self._algo_name = name
 
     @property
     def table(self) -> Dict[str, List[float]]:
@@ -15,6 +16,10 @@ class MDP:
     @property
     def policy(self) -> Dict[Tuple[str, str], Tuple[str, str]]:
         return self._policy
+
+    @property
+    def algo_name(self) -> str:
+        return self._algo_name
 
     def _init_table(self, num_agents):
         """

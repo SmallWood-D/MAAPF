@@ -79,9 +79,9 @@ def print_result_csv(file_name, graph, vi, ID, limit, prob_range, start, target,
         print(f"average optimal {opt_avg / len(start)}", file=result_fd)
 
 
-def print_result_json(graph, vi, id, limit, prob_range, start, target, vi_time, quality, board, algo, board_id,
+def print_result_json(graph, exp_res, id, limit, prob_range, start, target, vi_time, quality, board, board_id,
                       heuristic="NA"):
-    exp_id = f"{algo}_{id}"
+    exp_id = f"{exp_res.algo_name()}_{id}"
     result = dict()
     # result['VI_table'] = vi.table
     result["time"] = vi_time
@@ -89,10 +89,10 @@ def print_result_json(graph, vi, id, limit, prob_range, start, target, vi_time, 
     result["target"] = str(target)
     result["quality"] = quality
     result["probability"] = graph.prob
-    result["agents"] = len(next(iter(vi.table.keys())))
+    result["agents"] = len(next(iter(exp_res.table.keys())))
     result["ID"] = exp_id
-    result["algo"] = algo
-    result["expected utility"] = vi.table[start][-1]
+    result["algo"] = exp_res.algo_name()
+    result["expected utility"] = exp_res.table[start][-1]
     result["min range"] = prob_range[0]
     result["max range"] = prob_range[1]
     result["board size"] = f"{len(board[0]) - 2} X {len(board) - 2}"
