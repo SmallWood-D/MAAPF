@@ -4,7 +4,7 @@ import glob
 import os
 import random
 from math import log
-from Algo.dijkstra import pron_w
+from Algo.dijkstra import calculate_optimal_probability
 
 
 def calculate_avg_optimal_probability(graph, start):
@@ -51,37 +51,9 @@ def evaluate_policy(graph, vi, start, goal, num_of_experiments):
     return wins/num_of_experiments
 
 
-def print_result_csv(file_name, graph, vi, ID, limit, prob_range, start, target, vi_time, quality, board):
-    with open(file_name, 'w', newline='') as result_fd:
-        writer = csv.writer(result_fd)
-        writer.writerow(["position", "values"])
-        for pos, v in vi.table.items():
-            row = [pos]
-            row.extend(v)
-            writer.writerow(row)
-        print(f"time, {vi_time}", file=result_fd)
-        print(f"quality,  {quality}%", file=result_fd)
-        print(f"agents, {len(next(iter(vi.table.keys())))}", file=result_fd)
-        print(f"ID, {ID}", file=result_fd)
-        print(f"expected utility, {vi.table[start][-1]}", file=result_fd)
-        print(f"probability range, ({prob_range[0]}, {prob_range[1]})", file=result_fd)
-        print(f"board size, {len(board[0]) - 2} X {len(board) - 2}", file=result_fd)
-        if limit:
-            print(f"number of iteration, {limit}", file=result_fd)
-        else:
-            print(f"number of iteration, until converge", file=result_fd)
-        for row in board:
-            print(", ".join([p if p == '#' else str(graph.prob[p]) for p in row]), file=result_fd)
-
-        opt_avg = 0
-        for s,g in zip(start, target):
-            opt_avg += pron_w(graph, s)[g]
-        print(f"average optimal {opt_avg / len(start)}", file=result_fd)
-
-
 def print_result_json(graph, exp_res, id, limit, prob_range, start, target, vi_time, quality, board, board_id,
                       heuristic="NA"):
-    exp_id = f"{exp_res.algo_name()}_{id}"
+    exp_id = f"{exp_res.algo_name}_{id}"
     result = dict()
     # result['VI_table'] = vi.table
     result["time"] = vi_time
@@ -91,7 +63,7 @@ def print_result_json(graph, exp_res, id, limit, prob_range, start, target, vi_t
     result["probability"] = graph.prob
     result["agents"] = len(next(iter(exp_res.table.keys())))
     result["ID"] = exp_id
-    result["algo"] = exp_res.algo_name()
+    result["algo"] = exp_res.algo_name
     result["expected utility"] = exp_res.table[start][-1]
     result["min range"] = prob_range[0]
     result["max range"] = prob_range[1]
@@ -103,8 +75,16 @@ def print_result_json(graph, exp_res, id, limit, prob_range, start, target, vi_t
 
     opt_avg = 0
     for s, g in zip(start, target):
-        opt_avg += pron_w(graph, s)[g]
+        opt_avg += calculate_optimal_probability(graph, s)[0][g]
         # TODO can be improved
+    result["average sum prob"] = opt_avg / len(start)
+
+    opt_avg = 0
+
+    for i, agent in enumerate(zip(start, target)):
+        optimal_probability = calculate_optimal_probability(graph, agent[1])[1][agent[0]]
+        result[f"prob_opt_{i}"] = optimal_probability
+        opt_avg += optimal_probability
     result["average optimal"] = opt_avg / len(start)
 
     with open(f"results{os.path.sep}{exp_id}.json", 'w') as result_fd:
@@ -121,7 +101,8 @@ def collect_res_csv(file_name):
                       "max range": "probability maximum range",
                       "board size": "board size or board shape",
                       "number of iteration": "number of iteration the until the algorithm finsih",
-                      "average optimal": "average of the sums of -log(portability) for all agents",
+                      "average sum prob": "average of the sums of -log(portability) for all agents",
+                      "average optimal": "average of the probability of the shortest path for all agents",
                       "algo": "name of the algorithm",
                       "board_id": "board id",
                       "heuristic": "name of the heuristic fucntion"}
