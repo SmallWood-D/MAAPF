@@ -107,6 +107,8 @@ def collect_res_csv(file_name, suffix):
                       "algo": "name of the algorithm",
                       "board_id": "board id",
                       "heuristic": "name of the heuristic fucntion"}
+    if not os.path.exists("results"):
+        os.makedirs("results")
     with open(f"results{os.path.sep}{file_name}", 'w', newline='') as result_fd:
         writer = csv.DictWriter(result_fd, fieldnames=columns_titles.keys())
         writer.writeheader()
