@@ -1,4 +1,5 @@
 import itertools
+import random
 from typing import List, Dict, Tuple, Iterator
 
 
@@ -61,6 +62,14 @@ class MDP:
         moves = map(lambda action: MDP.valid_action(pos, action), actions)
         return [move for move in moves if move is not None]
 
+    def _q_value(self, state, next_step):
+        calc = []
+        sink_reward = -100
+        for c, m in zip(state, next_step):
+            calc.append(
+                ((1 - self._graph.prob[m]) * self._table[next_step][-1]) + (self._graph.prob[m] * sink_reward))
+        return -1 + sum(calc)
+
     @staticmethod
     def valid_action(pos: Tuple[str, str], action: Tuple[str, str]) -> bool:
         """
@@ -77,3 +86,24 @@ class MDP:
                 valid = False
                 break
         return next_pos if valid else None
+
+    # T(s) = argmax_a [sum_s' (prob(s,a,s')*V(s')] + R(s)
+    def calc_policy(self, source, target):
+        path = list()
+        path.append(source)
+        limit = 10 * len(self._table)
+        while path[-1] != target:
+            if not limit:
+                raise Exception("Fail to find path")
+            limit -= 1
+            curr_state = path[-1]
+            actions = self._get_actions(curr_state)
+            q_values = [self._q_value(curr_state, ns) for ns in actions]
+            min_i = max(range(len(q_values)), key=q_values.__getitem__)
+            if curr_state in self._policy:
+                self._policy[curr_state].add(actions[min_i])
+            else:
+                self._policy[curr_state] = [(actions[min_i])]
+            path.append(actions[min_i])
+            # path.append(random.choices(self._policy[path[-1]])[0])
+        return path
