@@ -51,7 +51,7 @@ def evaluate_policy(graph, vi, start, goal, num_of_experiments):
     return wins/num_of_experiments
 
 
-def print_result_json(graph, exp_res, id, limit, prob_range, start, target, vi_time, quality, board, board_id,
+def print_result_json(graph, exp_res, id, limit, prob_range, start, target, vi_time, quality, board, board_id, suffix,
                       heuristic="NA"):
     exp_id = f"{exp_res.algo_name}_{id}"
     result = dict()
@@ -86,12 +86,13 @@ def print_result_json(graph, exp_res, id, limit, prob_range, start, target, vi_t
         result[f"prob_opt_{i}"] = optimal_probability
         opt_avg += optimal_probability
     result["average optimal"] = opt_avg / len(start)
-
-    with open(f"results{os.path.sep}{exp_id}.json", 'w') as result_fd:
+    if not os.path.exists(f"results{os.path.sep}{suffix}"):
+        os.makedirs(f"results{os.path.sep}{suffix}")
+    with open(f"results{os.path.sep}{suffix}{os.path.sep}{exp_id}.json", 'w') as result_fd:
         json.dump(result, result_fd, sort_keys=True, indent=4)
 
 
-def collect_res_csv(file_name):
+def collect_res_csv(file_name, suffix):
     columns_titles = {"ID": "experiments ID",
                       "time": "algorithm run time",
                       "quality": "the percentage of success travers of the path - no agent got destory",
@@ -109,7 +110,7 @@ def collect_res_csv(file_name):
     with open(f"results{os.path.sep}{file_name}", 'w', newline='') as result_fd:
         writer = csv.DictWriter(result_fd, fieldnames=columns_titles.keys())
         writer.writeheader()
-        exp_json = glob.glob(f"results{os.path.sep}*.json")
+        exp_json = glob.glob(f"results{os.path.sep}{suffix}{os.path.sep}*.json")
         for exp_f in exp_json:
             with open(exp_f, 'r') as exp_fd:
                 data = json.load(exp_fd)
