@@ -1,47 +1,13 @@
-import itertools
+from Algo.mdp import MDP
 from typing import List, Dict, Tuple, Iterator
-from Algo.dijkstra import dijkstra
+from Algo.dijkstra import pron_w as dijkstra
 
 
-class RTDP:
+class RTDP(MDP):
+
     def __init__(self, graph):
-        self._policy = {}
-        self._table = {}
-        self._graph = graph
-
-    @property
-    def table(self) -> Dict[str, List[float]]:
-        return self._table
-
-    @property
-    def policy(self) -> Dict[Tuple[str, str], Tuple[str, str]]:
-        return self._policy
-
-    def _init_table(self, num_agents):
-        """
-        initialize the table to store the V values
-        :return: table for VI calculation
-        """
-        self._table = {}
-        positions = list(self._graph.graph.keys())  # all the positions on the board
-        for pair in itertools.product(positions, repeat=num_agents):
-            if len(pair) == len(set(pair)):
-                self._table[pair] = []
-
-    def _get_actions(self, pos: Tuple[str, str]) -> Iterator[Tuple[str, str]]:
-        """
-        return all the possible actions from pos.
-        :param pos: the current position
-        :return: iterator of all possible actions (may contain illegal actions).
-        """
-        passable_actions = []
-        for p in pos:
-            curr_actions = self._graph.graph[p]
-            curr_actions.append(None)
-            passable_actions.append(curr_actions)
-        actions = set(itertools.product(*passable_actions))
-        moves = map(lambda action: RTDP.valid_action(pos, action), actions)
-        return [move for move in moves if move is not None]
+        super().__init__(graph, "RTDP")
+        self.table_delta = {}
 
     def _greedy_action(self, state):
         actions = self._get_actions(state)
@@ -73,7 +39,7 @@ class RTDP:
             self.table[curr_state].append(self._q_value(curr_state, action))
             curr_state = self._next_state(curr_state, action)
 
-    def rtdp(self, start, target, limit=1000, delta=0.0001):
+    def rtdp(self, start, target, limit=None, delta=0.00001, delta_limit=20):
         self._init_table(len(target))
         dijkstra_vals = [dijkstra(self._graph, pos) for pos in target]
         for state in self._table:
@@ -82,32 +48,15 @@ class RTDP:
                 assert pos in dijkstra_val
                 h_state += dijkstra_val[pos]
             self._table[state].append(h_state)
-        for i in range(limit):
+        iter_limit = limit if limit else 1000
+        stop = 0
+        for i in range(iter_limit):
             self._trial(start, target)
-
-    def _check_delta(self, delta: float) -> bool:
-        """
-        check if the latest VI iteration change is smaller then delta.
-        :param delta: the maximal difference between two value iterations.
-        :return: True if all the values in the table didn't change more then delta
-        """
-        stop = False
-        for row in self.table.values():
-            if len(row) > 1 and abs(row[-1] - row[-2]) > delta:
+            stop = stop + 1 if self._check_delta(delta) else 0
+            if stop == delta_limit:
                 break
-        else:
-            stop = True
-        return stop
 
-    # T(s) = argmax_a [sum_s' (prob(s,a,s')*V(s')] + R(s)
-    def rtdp_policy(self, target):
-        self._policy = {}
-        for pos in self._table.keys():
-            if pos == target:
-                continue
-            max_val = max([self.table[p][-1] for p in self._get_actions(pos)])
-
-            self._policy[pos] = [p for p in self._get_actions(pos) if self.table[p][-1] == max_val]
+        return -1 if i == iter_limit - 1 else i
 
     def policy_path(self, source, target):
         path = list()
@@ -121,19 +70,22 @@ class RTDP:
         path.append(curr_state)
         return path
 
-    @staticmethod
-    def valid_action(pos: Tuple[str, str], action: Tuple[str, str]) -> bool:
+    def _check_delta(self, delta: float) -> bool:
         """
-        check if the move from prev to curr is valid
-        :param pos: previous position
-        :param action: current action
-        :return:True if move is valid
+        check if the latest iteration change is smaller then delta.
+        :param delta: the maximal difference between two value iterations.
+        :return: True if all the values in the table didn't change more then delta
         """
-        next_pos = tuple(a if a else p for p, a in zip(pos, action))
-        valid = len(next_pos) == len(set(next_pos)) and next_pos != pos
-        pos_map = {p: idx for idx, p in enumerate(pos)}
-        for idx, a in enumerate(action):
-            if a in pos_map and action[pos_map[a]] == pos[idx]:
-                valid = False
-                break
-        return next_pos if valid else None
+        stop = False
+        for pos, row in self.table.items():
+            if pos in self.table_delta:
+                old_val = self.table_delta[pos]
+                new_val = len(row)
+                self.table_delta[pos] = new_val
+                if old_val < new_val and abs(row[-1] - row[-2]) > delta:
+                    break
+            else:
+                self.table_delta[pos] = len(row)
+        else:
+            stop = True
+        return stop
