@@ -62,9 +62,8 @@ class MDP:
         moves = map(lambda action: MDP.valid_action(pos, action), actions)
         return [move for move in moves if move is not None]
 
-    def _q_value(self, state, next_step):
+    def _q_value(self, state, next_step, sink_reward=-100):
         calc = []
-        sink_reward = -100
         for c, m in zip(state, next_step):
             calc.append(
                 ((1 - self._graph.prob[m]) * self._table[next_step][-1]) + (self._graph.prob[m] * sink_reward))
@@ -101,7 +100,7 @@ class MDP:
             q_values = [self._q_value(curr_state, ns) for ns in actions]
             min_i = max(range(len(q_values)), key=q_values.__getitem__)
             if curr_state in self._policy:
-                self._policy[curr_state].add(actions[min_i])
+                self._policy[curr_state].append(actions[min_i])
             else:
                 self._policy[curr_state] = [(actions[min_i])]
             path.append(actions[min_i])
