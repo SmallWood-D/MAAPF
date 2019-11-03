@@ -34,7 +34,7 @@ def apply(state_a, state_b, prob_table):
     return next_state
 
 
-def evaluate_policy(graph, vi, start, goal, num_of_experiments):
+def evaluate_policy1(graph, vi, start, goal, num_of_experiments):
     wins = 0
     loses = 0
     for i in range(num_of_experiments):
@@ -46,6 +46,23 @@ def evaluate_policy(graph, vi, start, goal, num_of_experiments):
                 loses += 1
                 break
             if world_state == goal:
+                wins += 1
+                break
+    return wins/num_of_experiments
+
+
+def evaluate_policy(graph, mdp, start, goal, num_of_experiments):
+    wins = 0
+    loses = 0
+    for i in range(num_of_experiments):
+        current_state = start
+        while True:
+            action = mdp.get_best_action(current_state)
+            current_state = apply(current_state, action, graph.prob)
+            if not current_state:
+                loses += 1
+                break
+            if current_state == goal:
                 wins += 1
                 break
     return wins/num_of_experiments
