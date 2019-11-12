@@ -5,6 +5,7 @@ import os
 import random
 from math import log
 from Algo.dijkstra import calculate_optimal_probability
+from jinja2 import Template
 
 
 def calculate_avg_optimal_probability(graph, start):
@@ -34,7 +35,7 @@ def apply(state_a, state_b, prob_table):
     return next_state
 
 
-def evaluate_policy(graph, vi, start, goal, num_of_experiments):
+def evaluate_policy1(graph, vi, start, goal, num_of_experiments):
     wins = 0
     loses = 0
     for i in range(num_of_experiments):
@@ -46,6 +47,26 @@ def evaluate_policy(graph, vi, start, goal, num_of_experiments):
                 loses += 1
                 break
             if world_state == goal:
+                wins += 1
+                break
+    return wins/num_of_experiments
+
+
+def evaluate_policy(graph, mdp, start, goal, num_of_experiments):
+    wins = 0
+    loses = 0
+    policy = {}
+    for i in range(num_of_experiments):
+        current_state = start
+        while True:
+            action = mdp.get_best_action(current_state, policy)
+            next_state = apply(current_state, action, graph.prob)
+            if not next_state:
+                loses += 1
+                break
+            policy[current_state] = next_state
+            current_state = next_state
+            if next_state == goal:
                 wins += 1
                 break
     return wins/num_of_experiments
@@ -120,3 +141,30 @@ def collect_res_csv(file_name, suffix):
                 writer.writerow(filter_data)
         for c, i in columns_titles.items():
             print(f"{c}, {i}", file=result_fd)
+
+
+def print_heat_table(board, prob, table, name, algo_name, id, start, target,):
+    table_new = []
+    max_val = 0
+    for row in board:
+        row_new = []
+        for pos in row:
+            if pos != '#':
+                val = table[pos]
+                row_new.append(val)
+                if val > max_val:
+                    max_val = val
+        if row_new:
+            table_new.append(row_new)
+    start_list= {p : 1for p in start}
+    target_list= {p : 1for p in target}
+    with open(os.path.join('resources', 'heatTable.html.jinja')) as f:
+        tmpl = Template(f.read())
+    with open(f"results{os.path.sep}{name}{os.path.sep}{algo_name}_{id}.html", 'w') as result_fd:
+        print(tmpl.render(
+            table=table_new,
+            max=max_val,
+            start=start_list,
+            target=target_list,
+            prob=prob
+        ), file=result_fd)
