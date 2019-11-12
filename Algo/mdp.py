@@ -1,5 +1,4 @@
 import itertools
-import random
 from typing import List, Dict, Tuple, Iterator
 
 
@@ -107,15 +106,24 @@ class MDP:
             # path.append(random.choices(self._policy[path[-1]])[0])
         return path
 
-    def get_best_action(self, state):
-        actions = self._get_actions(state)
-        max_action = actions.pop()
-        max_val = self._q_value(state, max_action)
-        for ns in actions:
-            val = self._q_value(state, ns)
-            if val > max_val:
-                max_val = val
-                max_action = ns
-        # q_values = [self._q_value(state, ns) for ns in actions]
-        # max_i = max(range(len(q_values)), key=q_values.__getitem__)
-        return max_action
+    def get_best_action(self, state, policy = {}):
+        """
+        find the action that maximize Q value for the next step.
+        :param state: current state
+        :param policy: if policy exists the best action was already calculated.
+        :return: next state
+        """
+        if state in policy:
+            return policy[state]
+        else:
+            actions = self._get_actions(state)
+            max_action = actions.pop()
+            max_val = self._q_value(state, max_action)
+            for ns in actions:
+                val = self._q_value(state, ns)
+                if val > max_val:
+                    max_val = val
+                    max_action = ns
+            # q_values = [self._q_value(state, ns) for ns in actions]
+            # max_i = max(range(len(q_values)), key=q_values.__getitem__)
+            return max_action
