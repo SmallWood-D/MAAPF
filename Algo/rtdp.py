@@ -1,9 +1,8 @@
 from Algo.mdp import MDP
 from typing import List, Dict, Tuple, Iterator
-from Algo.dijkstra import pron_w as dijkstra
+from Algo.dijkstra import h_dijkstra
 import time
 import random
-
 
 class RTDP(MDP):
 
@@ -12,14 +11,26 @@ class RTDP(MDP):
         self.table_delta = {}
         self.policy_delta = {}
         self._visit_table = {}
+        self._empty = '$'
 
     @property
     def visit_table(self):
         return self._visit_table
 
-    def _greedy_action(self, state):
+    def _r_q_value(self, next_step, h_dijkstra, target, sink_reward=-100):
+        calc = []
+        if self.table[next_step][0] == self._empty:
+            for s, t in zip(next_step, target):
+                x, y= h_dijkstra(self._graph, s, t, 1, 1)
+                print(x,y)
+        for m in next_step:
+            calc.append(
+                ((1 - self._graph.prob[m]) * self._table[next_step][-1]) + (self._graph.prob[m] * sink_reward))
+        return -1 + sum(calc)
+
+    def _greedy_action(self, state, h_dijkstra, target):
         actions = self._get_actions(state)
-        q_values = [self._q_value(state, ns) for ns in actions]
+        q_values = [self._r_q_value(ns, h_dijkstra, target) for ns in actions]
         max_i = max(range(len(q_values)), key=q_values.__getitem__)
         return actions[max_i]
 
@@ -32,13 +43,13 @@ class RTDP(MDP):
             next_state = action
         return next_state
 
-    def _trial(self, start, target):
+    def _trial(self, start, target, h_dijkstra):
         start_min = time.localtime().tm_min
         curr_state = start
         path = [curr_state]
         while curr_state != target:
-            action = self._greedy_action(curr_state)
-            self.table[curr_state].append(self._q_value(curr_state, action))
+            action = self._greedy_action(curr_state, h_dijkstra, target)
+            self.table[curr_state].append(self._r_q_value(action, h_dijkstra, target))
             if len(self.table[curr_state]) > 20:
                 self.table[curr_state].pop(0)
 
@@ -59,23 +70,20 @@ class RTDP(MDP):
             print("found path")
             print(path)
 
-    def rtdp(self, start, target, limit=None, delta=0.00001, delta_limit=20, heuristic=dijkstra):
+    def rtdp(self, start, target, limit=None, delta=0.00001, delta_limit=20, heuristic=h_dijkstra):
         start_min = time.localtime().tm_min
         self._init_table(len(target))
-        dijkstra_vals = [heuristic(self._graph, pos) for pos in target]
+
         for state in self._table:
-            h_state = 0
-            for pos, dijkstra_val in zip(state, dijkstra_vals):
-                assert pos in dijkstra_val
-                h_state += dijkstra_val[pos]
-            self._table[state].append(h_state)
-        self._table[target] = [80]
+            self._table[state].append(self._empty)
+
+        self._table[target] = [30]
         for p in self._graph.prob:
             self.visit_table[p] = 0
         iter_limit = limit if limit else 20000
         stop = 0
         for i in range(iter_limit):
-            self._trial(start, target)
+            self._trial(start, target, h_dijkstra)
             stop = stop + 1 if self._check_delta(delta) else 0
             end_min = time.localtime().tm_min
             if end_min < start_min:

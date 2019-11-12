@@ -19,7 +19,7 @@ class VI(MDP):
                 if pos == target:
                     continue
                 for next_step in self._get_actions(pos):
-                    steps.append(self._q_value(pos, next_step))
+                    steps.append(self._q_value(next_step))
                 self._table[pos] = [self._table[pos][-1], max(steps)]  # reward of step
             if not limit and self._check_delta(delta):
                 break

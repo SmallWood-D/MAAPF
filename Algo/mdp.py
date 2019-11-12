@@ -61,9 +61,9 @@ class MDP:
         moves = map(lambda action: MDP.valid_action(pos, action), actions)
         return [move for move in moves if move is not None]
 
-    def _q_value(self, state, next_step, sink_reward=-100):
+    def _q_value(self, next_step, sink_reward=-100):
         calc = []
-        for c, m in zip(state, next_step):
+        for m in next_step:
             calc.append(
                 ((1 - self._graph.prob[m]) * self._table[next_step][-1]) + (self._graph.prob[m] * sink_reward))
         return -1 + sum(calc)
@@ -96,7 +96,7 @@ class MDP:
             limit -= 1
             curr_state = path[-1]
             actions = self._get_actions(curr_state)
-            q_values = [self._q_value(curr_state, ns) for ns in actions]
+            q_values = [self._q_value(ns) for ns in actions]
             max_i = max(range(len(q_values)), key=q_values.__getitem__)
             if curr_state in self._policy:
                 self._policy[curr_state].append(actions[max_i])
@@ -118,12 +118,12 @@ class MDP:
         else:
             actions = self._get_actions(state)
             max_action = actions.pop()
-            max_val = self._q_value(state, max_action)
+            max_val = self._q_value(max_action)
             for ns in actions:
-                val = self._q_value(state, ns)
+                val = self._q_value(ns)
                 if val > max_val:
                     max_val = val
                     max_action = ns
-            # q_values = [self._q_value(state, ns) for ns in actions]
+            # q_values = [self._q_value(ns) for ns in actions]
             # max_i = max(range(len(q_values)), key=q_values.__getitem__)
             return max_action
