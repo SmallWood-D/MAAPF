@@ -1,0 +1,71 @@
+<style>
+table  {
+    border-collapse: collapse; }
+
+td, th {
+       border: 1px solid black; padding: 3px 8px;
+}
+
+th {
+      text-align: left;
+}
+</style>
+
+
+<html>
+<body>
+<div id="content">
+</div>
+</body>
+</html>
+
+<script>
+
+var BOARD = [
+{%- for row in table %}
+    [
+      {%- for pos in row -%}
+      {{pos}},
+      {%- endfor -%}
+    ],
+    {%- endfor %}
+];
+var max = {{max}};
+var start = {{start}};
+var target = {{target}};
+var prob = {{prob}};
+
+function pickColor(el, val, index) {
+    let prob_val = prob[index]
+    el.textContent = `${val}, ${prob_val}`;
+    el.style.background = `rgba(255, 0, 0 ,${1 - ((max - val) / max)})`;
+    el.style.textAlign = "right";
+}
+
+function setFrame(el, color) {
+    el.style.border = `2px solid ${color}`;
+}
+
+function buildTable(data) {
+    var table = document.createElement('table');
+    data.forEach(function(boardRow, i){
+        var row = document.createElement('tr');
+        boardRow.forEach(function(prop, j) {
+            var el = document.createElement('td');
+            pickColor(el,prop, `${i}|${j}`);
+            if (start[`${i}|${j}`]) {
+                setFrame(el, "green");
+            }
+            if (target[`${i}|${j}`]) {
+                setFrame(el, "blue");
+            }
+            row.appendChild(el);
+        });
+        table.appendChild(row);
+    });
+
+    return table;
+}
+document.body.appendChild(buildTable(BOARD));
+
+</script>
