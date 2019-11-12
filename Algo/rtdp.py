@@ -11,7 +11,11 @@ class RTDP(MDP):
         super().__init__(graph, "RTDP")
         self.table_delta = {}
         self.policy_delta = {}
-        self.visit_table = {}
+        self._visit_table = {}
+
+    @property
+    def visit_table(self):
+        return self._visit_table
 
     def _greedy_action(self, state):
         actions = self._get_actions(state)
@@ -34,7 +38,6 @@ class RTDP(MDP):
         path = [curr_state]
         while curr_state != target:
             action = self._greedy_action(curr_state)
-            # print(action)
             self.table[curr_state].append(self._q_value(curr_state, action))
             if len(self.table[curr_state]) > 20:
                 self.table[curr_state].pop(0)
@@ -42,6 +45,7 @@ class RTDP(MDP):
             next_state = self._next_state(curr_state, action)
             if not next_state:
                 break
+
             curr_state = next_state
             path.append(next_state)
             for np in next_state:
@@ -55,7 +59,7 @@ class RTDP(MDP):
             print("found path")
             print(path)
 
-    def rtdp(self, start, target, limit=None, delta=0.0001, delta_limit=10, heuristic=dijkstra):
+    def rtdp(self, start, target, limit=None, delta=0.00001, delta_limit=20, heuristic=dijkstra):
         start_min = time.localtime().tm_min
         self._init_table(len(target))
         dijkstra_vals = [heuristic(self._graph, pos) for pos in target]
@@ -65,9 +69,10 @@ class RTDP(MDP):
                 assert pos in dijkstra_val
                 h_state += dijkstra_val[pos]
             self._table[state].append(h_state)
+        self._table[target] = [80]
         for p in self._graph.prob:
             self.visit_table[p] = 0
-        iter_limit = limit if limit else 10000
+        iter_limit = limit if limit else 20000
         stop = 0
         for i in range(iter_limit):
             self._trial(start, target)
