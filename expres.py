@@ -158,7 +158,7 @@ def print_heat_table(board, prob, table, name, algo_name, id, start, target,):
             table_new.append(row_new)
     start_list= {p : 1for p in start}
     target_list= {p : 1for p in target}
-    with open('heatTable.html.jinja') as f:
+    with open(os.path.join('resources', 'heatTable.html.jinja')) as f:
         tmpl = Template(f.read())
     with open(f"results{os.path.sep}{name}{os.path.sep}{algo_name}_{id}.html", 'w') as result_fd:
         print(tmpl.render(
