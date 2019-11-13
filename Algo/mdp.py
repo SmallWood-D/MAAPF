@@ -63,9 +63,12 @@ class MDP:
 
     def _q_value(self, next_step, sink_reward=-100):
         calc = []
-        for m in next_step:
-            calc.append(
-                ((1 - self._graph.prob[m]) * self._table[next_step][-1]) + (self._graph.prob[m] * sink_reward))
+        if self._table[next_step][-1] == '$':
+            pass
+        else:
+            for m in next_step:
+                calc.append(
+                    ((1 - self._graph.prob[m]) * self._table[next_step][-1]) + (self._graph.prob[m] * sink_reward))
         return -1 + sum(calc)
 
     @staticmethod

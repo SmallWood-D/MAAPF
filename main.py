@@ -7,7 +7,7 @@ from expres import print_result_json, collect_res_csv, evaluate_policy, print_he
 import Algo.dijkstra as dijkstra
 
 
-def tests_a(start, target, prob_inter, board_size, test_num, suffix, heu=dijkstra.h_dijkstra):
+def tests_a(start, target, prob_inter, board_size, test_num, suffix, heu=dijkstra.h_len):
     for i in range(test_num):
         local_time = time.localtime()
         board_id = f"{i}_{local_time.tm_hour}{local_time.tm_min}{local_time.tm_sec}"
@@ -78,7 +78,7 @@ def tests_a(board_file, start, target, prob_inter, test_num, suffix, heu=dijkstr
         print("RTDP")
         start_t = time.time()
         try:
-            iter_num = rtdp_g.rtdp(start, target, delta_limit=10, heuristic=dijkstra.h_dijkstra)
+            iter_num = rtdp_g.rtdp(start, target, delta_limit=10, heuristic=dijkstra.h_len)
         except Exception as e:
             print(e)
         end_t = time.time()
@@ -96,7 +96,7 @@ def tests_a(board_file, start, target, prob_inter, test_num, suffix, heu=dijkstr
         print("RTDP")
         start_t = time.time()
         try:
-            iter_num = rtdp_g.rtdp(start, target, delta_limit=10, heuristic=dijkstra.h_dijkstra)
+            iter_num = rtdp_g.rtdp(start, target, delta_limit=10, heuristic=dijkstra.h_len)
         except Exception as e:
             print(e)
         end_t = time.time()
@@ -124,7 +124,7 @@ def tests_c(start, target, prob_inter, board_size, test_num, suffix, heu=dijkstr
         print("RTDP")
         start_t = time.time()
         try:
-            iter_num = rtdp_g.rtdp(start, target, delta_limit=10, heuristic=dijkstra.h_dijkstra)
+            iter_num = rtdp_g.rtdp(start, target, delta_limit=10, heuristic=dijkstra.h_len)
         except Exception as e:
             print(e)
         end_t = time.time()
@@ -148,7 +148,7 @@ def tests_c(start, target, prob_inter, board_size, test_num, suffix, heu=dijkstr
         print("RTDP")
         start_t = time.time()
         try:
-            iter_num = rtdp_g.rtdp(start, target, delta_limit=10, heuristic=dijkstra.h_dijkstra)
+            iter_num = rtdp_g.rtdp(start, target, delta_limit=10, heuristic=dijkstra.h_len)
         except Exception as e:
             print(e)
         print(iter_num)
