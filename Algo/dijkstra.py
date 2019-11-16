@@ -2,12 +2,12 @@ from math import log
 
 
 def h_len(graph, start, target):
-    dist_table, path = h_dijkstra(graph, start, target, lambda x, y: 1, None)
+    dist_table, path = h_dijkstra(graph, start, target, lambda x, y: 1, lambda new, old: new < old, len(graph.prob.keys()), min)
     return -1 * (len(path) -1)
 
 
 def h_prob(graph, start, target):
-    dist_table, path = h_dijkstra(graph, start, target, lambda g, p: -1 * log(g.prob[p]), None)
+    dist_table, path = h_dijkstra(graph, start, target, lambda g, p: -1 * log(g.prob[p]), lambda new, old: new > old, -1, max)
     h_val = 0
     for p in path:
         h_val += -1 * log(graph.prob[p])
@@ -15,14 +15,14 @@ def h_prob(graph, start, target):
 
 
 def h_reward_len(graph, start, target):
-    dist_table, path = h_dijkstra(graph, start, target, lambda x, y: 1, None)
+    dist_table, path = h_dijkstra(graph, start, target, lambda x, y: 1, lambda new, old: new < old, len(graph.prob.keys()), min)
     h_val = 30
     h_val += -1 * (len(path) - 1)
     return h_val
 
 
 def h_reward_prob(graph, start, target):
-    dist_table, path = h_dijkstra(graph, start, target, lambda g, p: -1 * log(g.prob[p]), None)
+    dist_table, path = h_dijkstra(graph, start, target, lambda g, p: -1 * log(g.prob[p]), lambda new, old: new > old, -1, max)
     live = 1
     death = 1
     for p in path:
@@ -32,8 +32,7 @@ def h_reward_prob(graph, start, target):
     return h_val
 
 
-def h_dijkstra(graph, start, target, weghit_func, h_func):
-    max_len = len(graph.prob.keys())
+def h_dijkstra(graph, start, target, weghit_func, h_func, max_len, next_func):
     dist = {p: max_len for p in graph.graph}
     q = set()
     q.add((start, None))
@@ -41,7 +40,7 @@ def h_dijkstra(graph, start, target, weghit_func, h_func):
     dist[start] = 0
     path = {}
     while q:
-        u, prev_u = min(q, key=lambda p: dist[p[0]])
+        u, prev_u = next_func(q, key=lambda p: dist[p[0]])
         if prev_u:
             path[u] = prev_u
         if u == target:
@@ -52,7 +51,7 @@ def h_dijkstra(graph, start, target, weghit_func, h_func):
             if p and p not in qd:
                 q.add((p, u))
                 alt = dist[u] + weghit_func(graph, p)
-                if alt < dist[p]:
+                if h_func(alt, dist[p]):
                     dist[p] = alt
     ret_path = [target]
     while ret_path[-1] != start:
