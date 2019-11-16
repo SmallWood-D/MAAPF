@@ -72,9 +72,8 @@ def evaluate_policy(graph, mdp, start, goal, num_of_experiments):
     return wins/num_of_experiments
 
 
-def print_result_json(graph, exp_res, id, limit, prob_range, start, target, vi_time, quality, board, board_id, suffix,
+def print_result_json(graph, exp_res, exp_id, limit, prob_range, start, target, vi_time, quality, board, board_id, suffix,
                       heuristic="NA"):
-    exp_id = f"{exp_res.algo_name}_{id}"
     result = dict()
     # result['VI_table'] = vi.table
     result["time"] = vi_time
@@ -143,7 +142,7 @@ def collect_res_csv(file_name, suffix):
             print(f"{c}, {i}", file=result_fd)
 
 
-def print_heat_table(board, prob, table, name, algo_name, id, start, target,):
+def print_heat_table(board, prob, table, name, id, start, target,):
     table_new = []
     max_val = 0
     for row in board:
@@ -160,7 +159,7 @@ def print_heat_table(board, prob, table, name, algo_name, id, start, target,):
     target_list= {p : 1for p in target}
     with open(os.path.join('resources', 'heatTable.html.jinja')) as f:
         tmpl = Template(f.read())
-    with open(f"results{os.path.sep}{name}{os.path.sep}{algo_name}_{id}.html", 'w') as result_fd:
+    with open(f"results{os.path.sep}{name}{os.path.sep}{id}.html", 'w') as result_fd:
         print(tmpl.render(
             table=table_new,
             max=max_val,
