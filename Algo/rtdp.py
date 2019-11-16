@@ -17,7 +17,7 @@ class RTDP(MDP):
     def visit_table(self):
         return self._visit_table
 
-    def _r_q_value(self, next_step, heuristic, target, sink_reward=-100):
+    def _r_q_value(self, next_step, heuristic, target, sink_reward=-200):
         calc = []
         if self.table[next_step][-1] == self._empty:
             h_val = 0
@@ -49,6 +49,9 @@ class RTDP(MDP):
         curr_state = start
         path = [curr_state]
         while curr_state != target:
+
+            for np in curr_state:
+                self.visit_table[np] += 1
             action = self._greedy_action(curr_state, heuristic, target)
             self.table[curr_state].append(self._r_q_value(action, heuristic, target))
             if len(self.table[curr_state]) > 20:
@@ -60,16 +63,17 @@ class RTDP(MDP):
 
             curr_state = next_state
             path.append(next_state)
-            for np in next_state:
-                self.visit_table[np] += 1
             end_min = time.localtime().tm_min
             if end_min < start_min:
                 end_min += 60
-            if end_min - start_min > 3:
+            if end_min - start_min > 5:
                 break
+
         if curr_state == target:
-            print("found path")
-            print(path)
+            for np in curr_state:
+                self.visit_table[np] += 1
+            # print("found path")
+            # print(path)
 
     def rtdp(self, start, target, limit=None, delta=0.00001, delta_limit=20, heuristic=heru.h_len):
         start_min = time.localtime().tm_min
@@ -81,7 +85,7 @@ class RTDP(MDP):
         self._table[target] = [30]
         for p in self._graph.prob:
             self.visit_table[p] = 0
-        iter_limit = limit if limit else 20000
+        iter_limit = limit if limit else 200000
         stop = 0
         for i in range(iter_limit):
             self._trial(start, target, heuristic)
@@ -89,10 +93,10 @@ class RTDP(MDP):
             end_min = time.localtime().tm_min
             if end_min < start_min:
                 end_min += 60
-            if end_min - start_min > 3:
+            if end_min - start_min > 5:
                 print("fail to finish in 5 minutes")
                 break
-            if stop == delta_limit:
+            if i > 500 and stop > delta_limit:
                 break
         return i
 
