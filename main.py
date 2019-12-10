@@ -14,9 +14,9 @@ def test_static_board(board_file, start, target, prob_inter, test_num, suffix):
     print(suffix)
 
     for i in range(test_num):
-        run_rtdp(i, board, prob, board_id, start, target, prob_inter, test_num, suffix, dijkstra.h_len, "len")
-        run_rtdp(i, board, prob, board_id, start, target, prob_inter, test_num, suffix, dijkstra.h_prob, "prob")
-        run_rtdp(i, board, prob, board_id, start, target, prob_inter, test_num, suffix, dijkstra.h_reward_len, "reward len")
+        # run_rtdp(i, board, prob, board_id, start, target, prob_inter, test_num, suffix, dijkstra.h_len, "len")
+        # run_rtdp(i, board, prob, board_id, start, target, prob_inter, test_num, suffix, dijkstra.h_prob, "prob")
+        # run_rtdp(i, board, prob, board_id, start, target, prob_inter, test_num, suffix, dijkstra.h_reward_len, "reward len")
         run_rtdp(i, board, prob, board_id, start, target, prob_inter, test_num, suffix, dijkstra.h_reward_prob, "reward prob")
 
     local_time = time.localtime()
@@ -56,10 +56,14 @@ def run_rtdp(idx, board, prob, board_id, start, target, prob_inter, test_num, su
     run_time = end_t - start_t
 
     exp_id = f"{rtdp_g.algo_name}_{ID}_{heu_name}"
+    for t in rtdp_g.table.items():
+        print(t)
+
     quality = evaluate_policy(mdp, rtdp_g, start, target, 1000)
     print_result_json(mdp, rtdp_g, exp_id, iter_num, prob_inter, start, target, run_time, quality * 100,
                       board, board_id, suffix, heuristic=heu_name)
-    print_heat_table(board, prob, rtdp_g.visit_table, suffix, exp_id, start, target)
+    print_heat_table(board, prob, rtdp_g.visit_table, suffix, exp_id + "_visit", start, target)
+    print_heat_table(board, prob, rtdp_g.next_table, suffix, exp_id + "_next", start, target)
 
 
 if __name__ == '__main__':
@@ -154,10 +158,10 @@ if __name__ == '__main__':
 
     test_static_board("resources\\boards\\board_13", g_start, g_target, g_prob_inter, g_test_num, "board_13")
 
-    g_start = ("1|1", "1|3")
-    g_target = ("5|0", "5|3")
+    g_start = ("0|0", "0|3")
+    g_target = ("2|0", "2|3")
     g_prob_inter = (0, 1)
-    g_test_num = 3
+    g_test_num = 1
 
     test_static_board("resources\\boards\\board_5", g_start, g_target, g_prob_inter, g_test_num, "board_5")
 
@@ -165,7 +169,7 @@ if __name__ == '__main__':
     g_target = ("4|4", "3|4")
     g_prob_inter = (0.3, 0.6)
     g_board_size = (10, 10)
-    g_test_num = 3
+    g_test_num = 1
 
     print("10x10x2")
     g_prob_inter = (0.3, 0.6)

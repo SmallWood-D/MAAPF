@@ -67,6 +67,7 @@ def evaluate_policy(graph, mdp, start, goal, num_of_experiments):
             policy[current_state] = next_state
             current_state = next_state
             if next_state == goal:
+                print("win")
                 wins += 1
                 break
     return wins/num_of_experiments

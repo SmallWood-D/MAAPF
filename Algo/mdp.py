@@ -119,14 +119,25 @@ class MDP:
         if state in policy:
             return policy[state]
         else:
-            actions = self._get_actions(state)
-            max_action = actions.pop()
-            max_val = self._q_value(max_action)
-            for ns in actions:
-                val = self._q_value(ns)
-                if val > max_val:
-                    max_val = val
-                    max_action = ns
-            # q_values = [self._q_value(ns) for ns in actions]
-            # max_i = max(range(len(q_values)), key=q_values.__getitem__)
-            return max_action
+            actions = [ ns for ns in self._get_actions(state) if self.table[ns][-1] != '$' ]
+            # max_action = actions.pop()
+            # max_val = self._q_value(max_action)
+            # for ns in actions:
+            #     if len(self.table[ns]) == 1:
+            #         continue
+            #     val = self._q_value(ns)
+            #     if val > max_val:
+            #         max_val = val
+            #         max_action = ns
+            q_values = [ self._q_value(ns) for ns in actions ]
+            death_prob = 1
+            max_i = max(range(len(q_values)), key=q_values.__getitem__)
+            for s in actions[max_i]:
+                death_prob *= self._graph.prob[s]
+            if death_prob > 0.3:
+                print(actions)
+                print(actions[max_i])
+                print(max_i)
+                print(q_values)
+            print(actions[max_i])
+            return actions[max_i]

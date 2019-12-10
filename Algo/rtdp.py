@@ -11,23 +11,29 @@ class RTDP(MDP):
         self.table_delta = {}
         self.policy_delta = {}
         self._visit_table = {}
+        self._next_table = {}
         self._empty = '$'
 
     @property
     def visit_table(self):
         return self._visit_table
 
-    def _r_q_value(self, next_step, heuristic, target, sink_reward=-200):
-        calc = []
+    @property
+    def next_table(self):
+        return self._next_table
+
+    def _r_q_value(self, next_step, heuristic, target, sink_reward=-100):
+        h_val = 0
+        for s, t in zip(next_step, target):
+            h_val += heuristic(self._graph, s, t)
         if self.table[next_step][-1] == self._empty:
-            h_val = 0
-            for s, t in zip(next_step, target):
-                h_val += heuristic(self._graph, s, t)
             self._table[next_step] = [h_val]
+        die = 1
+        live = 1
         for m in next_step:
-            calc.append(
-                ((1 - self._graph.prob[m]) * self._table[next_step][-1]) + (self._graph.prob[m] * sink_reward))
-        return -1 + sum(calc)
+            die *= self._graph.prob[m]
+            live *= (1 - self._graph.prob[m])
+        return -1 + self._table[next_step][-1] * live + sink_reward * die
 
     def _greedy_action(self, state, heuristic, target):
         actions = self._get_actions(state)
@@ -53,38 +59,44 @@ class RTDP(MDP):
             for np in curr_state:
                 self.visit_table[np] += 1
             action = self._greedy_action(curr_state, heuristic, target)
-            self.table[curr_state].append(self._r_q_value(action, heuristic, target))
+
+            if self.table[curr_state][-1] == self._empty:
+                self.table[curr_state] = [self._r_q_value(action, heuristic, target)]
+                assert self.table[curr_state][-1] >= self._r_q_value(action, heuristic, target), "bad"
+            else:
+                assert self.table[curr_state][-1] >= self._r_q_value(action, heuristic, target), "bad"
+                self.table[curr_state].append(self._r_q_value(action, heuristic, target))
+
             if len(self.table[curr_state]) > 20:
                 self.table[curr_state].pop(0)
 
+            for np in action:
+                self._next_table[np] += 1
             next_state = self._next_state(curr_state, action)
             if not next_state:
                 break
 
             curr_state = next_state
-            path.append(next_state)
+            path.append(curr_state)
             end_min = time.localtime().tm_min
             if end_min < start_min:
                 end_min += 60
-            if end_min - start_min > 5:
+            if end_min - start_min > 2:
                 break
-
         if curr_state == target:
-            for np in curr_state:
-                self.visit_table[np] += 1
-            # print("found path")
-            # print(path)
+            print(path)
 
-    def rtdp(self, start, target, limit=None, delta=0.00001, delta_limit=20, heuristic=heru.h_len):
+    def rtdp(self, start, target, limit=None, delta=0.0001, delta_limit=20, heuristic=heru.h_len):
         start_min = time.localtime().tm_min
         self._init_table(len(target))
 
         for state in self._table:
             self._table[state].append(self._empty)
 
-        self._table[target] = [30]
+        self._table[target] = [10]
         for p in self._graph.prob:
             self.visit_table[p] = 0
+            self.next_table[p] = 0
         iter_limit = limit if limit else 200000
         stop = 0
         for i in range(iter_limit):
@@ -93,7 +105,7 @@ class RTDP(MDP):
             end_min = time.localtime().tm_min
             if end_min < start_min:
                 end_min += 60
-            if end_min - start_min > 5:
+            if end_min - start_min > 2:
                 print("fail to finish in 5 minutes")
                 break
             if i > 500 and stop > delta_limit:

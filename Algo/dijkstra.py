@@ -25,10 +25,13 @@ def h_reward_prob(graph, start, target):
     dist_table, path = h_dijkstra(graph, start, target, lambda g, p: -1 * log(g.prob[p]), lambda new, old: new > old, -1, max)
     live = 1
     death = 1
-    for p in path:
-        live *= (1 - graph.prob[p])
-        death *= graph.prob[p]
-    h_val = live * 30 + death * -100
+    if len(path) == 1 and path[0] == target:
+        h_val = 1
+    else:
+        for p in path:
+            live *= (1 - graph.prob[p])
+            death *= graph.prob[p]
+        h_val = live * 15 + death * -100
     return h_val
 
 
